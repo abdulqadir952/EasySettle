@@ -1,0 +1,16 @@
+{
+  "name": "EasySettle",
+  "short_name": "EasySettle",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#317EFB",
+  "description": "A simple and easy expense management app.",
+  "icons": [
+    {
+      "src": "/5552241-200.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
