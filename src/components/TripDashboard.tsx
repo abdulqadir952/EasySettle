@@ -133,7 +133,18 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
     <>
       {/* Dialogs and Alerts */}
       <Dialog open={!!viewingReceipt} onOpenChange={() => setViewingReceipt(null)}>
-        <DialogContent className="max-w-3xl"><DialogHeader><DialogTitle>Receipt</DialogTitle></DialogHeader><div className="flex justify-center p-4"><img src={viewingReceipt!} alt="Receipt" className="max-w-full h-auto max-h-[80vh] rounded-md" /></div></DialogContent>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] sm:max-w-3xl overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Receipt</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center p-2 sm:p-4 overflow-auto max-h-[calc(95vh-8rem)]">
+            <img 
+              src={viewingReceipt!} 
+              alt="Receipt" 
+              className="max-w-full h-auto rounded-md object-contain" 
+            />
+          </div>
+        </DialogContent>
       </Dialog>
       
       <Dialog open={!!viewingExpense} onOpenChange={() => setViewingExpense(null)}>
@@ -282,7 +293,12 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div><CardTitle>Trip Members</CardTitle><CardDescription>Everyone who is a part of this trip.</CardDescription></div>
                     <Dialog open={isAddMemberDialogOpen} onOpenChange={setIsAddMemberDialogOpen}>
-                        <DialogTrigger asChild><Button size="sm" onClick={() => { setNewMemberName(''); setNewMemberPhone(''); }}><UserPlus className="mr-2 h-4 w-4" /> Add Member</Button></DialogTrigger>
+                        <DialogTrigger asChild>
+                            <Button size="sm" className="h-8 px-3 text-xs sm:h-9 sm:px-4 sm:text-sm" onClick={() => { setNewMemberName(''); setNewMemberPhone(''); }}>
+                                <UserPlus className="h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" />
+                                <span className="hidden sm:inline ml-1">Add Member</span>
+                            </Button>
+                        </DialogTrigger>
                         <DialogContent className="sm:max-w-[425px]">
                             <DialogHeader><DialogTitle>Add New Member</DialogTitle></DialogHeader>
                             <form onSubmit={handleAddMember} className="space-y-4 py-4">
