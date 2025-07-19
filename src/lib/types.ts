@@ -1,5 +1,7 @@
+
 export interface Trip {
   id: string;
+  ownerId: string;
   name: string;
   currency: string;
   createdAt: string;

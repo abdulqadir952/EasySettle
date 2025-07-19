@@ -1,59 +1,70 @@
+
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { TripDashboard } from '@/components/TripDashboard';
 import type { Trip } from '@/lib/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
-export default function TripPage() {
+
+function TripPageContent() {
   const router = useRouter();
   const params = useParams();
   const tripId = params.tripId as string;
+  const { user } = useAuth();
+  const { toast } = useToast();
   
   const [trip, setTrip] = useState<Trip | null>(null);
-  const [isClient, setIsClient] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setIsClient(true);
-    if (typeof window !== 'undefined' && tripId) {
-      try {
-        const storedTrips = localStorage.getItem("settleasy-trips");
-        if (storedTrips) {
-          const trips: Trip[] = JSON.parse(storedTrips);
-          const currentTrip = trips.find(t => t.id === tripId);
-          if (currentTrip) {
-            setTrip(currentTrip);
-          } else {
-            router.push('/'); 
-          }
-        }
-      } catch (error) {
-        console.error("Failed to parse trips from localStorage", error);
-        router.push('/');
-      }
+    if (!user) {
+        // If user is not logged in, we shouldn't be here.
+        // But maybe they are on a share link and got here by mistake.
+        setLoading(false);
+        return;
     }
-  }, [tripId, router]);
-
-  const handleUpdateTrip = (updatedTrip: Trip) => {
-    setTrip(updatedTrip);
-    if (typeof window !== 'undefined') {
-      try {
-        const storedTrips = localStorage.getItem("settleasy-trips");
-        if (storedTrips) {
-            const trips: Trip[] = JSON.parse(storedTrips);
-            const tripIndex = trips.findIndex(t => t.id === updatedTrip.id);
-            if (tripIndex !== -1) {
-                trips[tripIndex] = updatedTrip;
-                localStorage.setItem("settleasy-trips", JSON.stringify(trips));
+    if (tripId) {
+        const fetchTrip = async () => {
+            setLoading(true);
+            const tripDocRef = doc(db, 'trips', tripId);
+            try {
+                const tripSnap = await getDoc(tripDocRef);
+                if (tripSnap.exists() && tripSnap.data().ownerId === user.uid) {
+                    setTrip({ id: tripSnap.id, ...tripSnap.data() } as Trip);
+                } else {
+                    toast({variant: 'destructive', title: 'Error', description: 'Trip not found or you do not have permission to view it.'});
+                    router.push('/');
+                }
+            } catch (error) {
+                console.error("Error fetching trip:", error);
+                toast({variant: 'destructive', title: 'Error', description: 'Could not fetch trip data.'});
+                router.push('/');
+            } finally {
+                setLoading(false);
             }
-        }
-      } catch (error) {
-        console.error("Failed to update trip in localStorage", error);
-      }
+        };
+        fetchTrip();
+    }
+  }, [tripId, user, router, toast]);
+
+  const handleUpdateTrip = async (updatedData: Partial<Trip>) => {
+    if (!trip) return;
+    const tripDocRef = doc(db, 'trips', trip.id);
+    try {
+        await updateDoc(tripDocRef, updatedData);
+        setTrip(prev => prev ? { ...prev, ...updatedData } : null);
+    } catch(error) {
+        console.error("Failed to update trip in Firestore", error);
+        toast({variant: 'destructive', title: 'Error', description: 'Failed to save changes.'});
     }
   };
 
-  if (!isClient || !trip) {
+  if (loading || !trip) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p>Loading trip data...</p>
@@ -69,4 +80,13 @@ export default function TripPage() {
       />
     </div>
   );
+}
+
+
+export default function TripPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+            <TripPageContent />
+        </Suspense>
+    )
 }

@@ -26,7 +26,7 @@ import { Label } from "@/components/ui/label";
 
 type TripDashboardProps = {
   trip: Trip;
-  onUpdateTrip: (updatedTrip: Trip) => void;
+  onUpdateTrip: (updatedData: Partial<Trip>) => void;
 };
 
 export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
@@ -47,11 +47,20 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
   // Form states for adding/editing members
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberPhone, setNewMemberPhone] = useState("");
+  
+  const [shareableLink, setShareableLink] = useState("");
 
   const { toast } = useToast();
   const totalExpenses = trip.expenses.reduce((sum, exp) => sum + exp.amount, 0);
   const getMemberName = (id: string) => trip.members.find(m => m.id === id)?.name || 'Unknown Member';
-  const shareableLink = typeof window !== 'undefined' ? `${window.location.origin}/share/${trip.id}` : '';
+  
+  const generateShareableLink = () => {
+    if (typeof window !== 'undefined') {
+        const link = `${window.location.origin}/share?id=${trip.id}`;
+        setShareableLink(link);
+        setIsShareDialogOpen(true);
+    }
+  };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareableLink);
@@ -60,34 +69,28 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
 
   // Expense Handlers
   const handleAddExpense = (newExpense: Expense) => {
-    const updatedTrip = { ...trip, expenses: [...trip.expenses, newExpense].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) };
-    onUpdateTrip(updatedTrip);
+    const updatedExpenses = [...trip.expenses, newExpense].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    onUpdateTrip({ expenses: updatedExpenses });
     setIsExpenseDialogOpen(false);
   };
 
   const handleUpdateExpense = (updatedExpense: Expense) => {
-    const updatedTrip = {
-      ...trip,
-      expenses: trip.expenses.map(e => e.id === updatedExpense.id ? updatedExpense : e).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    };
-    onUpdateTrip(updatedTrip);
+    const updatedExpenses = trip.expenses.map(e => e.id === updatedExpense.id ? updatedExpense : e).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    onUpdateTrip({ expenses: updatedExpenses });
     setIsExpenseDialogOpen(false);
     setExpenseToEdit(null);
   };
   
   const handleDeleteExpense = () => {
     if (!expenseToDelete) return;
-    const updatedTrip = { ...trip, expenses: trip.expenses.filter(e => e.id !== expenseToDelete.id) };
-    onUpdateTrip(updatedTrip);
+    const updatedExpenses = trip.expenses.filter(e => e.id !== expenseToDelete.id);
+    onUpdateTrip({ expenses: updatedExpenses });
     setExpenseToDelete(null);
   };
 
   const handleToggleSettle = (expenseId: string, settled: boolean) => {
-    const updatedTrip = {
-      ...trip,
-      expenses: trip.expenses.map(e => e.id === expenseId ? { ...e, settled } : e)
-    };
-    onUpdateTrip(updatedTrip);
+    const updatedExpenses = trip.expenses.map(e => e.id === expenseId ? { ...e, settled } : e);
+    onUpdateTrip({ expenses: updatedExpenses });
   };
 
   const openAddExpenseDialog = () => {
@@ -105,8 +108,8 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
     e.preventDefault();
     if (newMemberName.trim()) {
         const newMember: Member = { id: uuidv4(), name: newMemberName.trim(), phone: newMemberPhone.trim() || undefined };
-        const updatedTrip = { ...trip, members: [...trip.members, newMember] };
-        onUpdateTrip(updatedTrip);
+        const updatedMembers = [...trip.members, newMember];
+        onUpdateTrip({ members: updatedMembers });
         setIsAddMemberDialogOpen(false);
         setNewMemberName("");
         setNewMemberPhone("");
@@ -117,8 +120,8 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
     e.preventDefault();
     if (memberToEdit && newMemberName.trim()) {
         const updatedMember: Member = { ...memberToEdit, name: newMemberName.trim(), phone: newMemberPhone.trim() || undefined };
-        const updatedTrip = { ...trip, members: trip.members.map(m => m.id === memberToEdit.id ? updatedMember : m) };
-        onUpdateTrip(updatedTrip);
+        const updatedMembers = trip.members.map(m => m.id === memberToEdit.id ? updatedMember : m);
+        onUpdateTrip({ members: updatedMembers });
         setMemberToEdit(null);
     }
   };
@@ -134,9 +137,8 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
         setMemberToDelete(null);
         return;
     }
-
-    const updatedTrip = { ...trip, members: trip.members.filter(m => m.id !== memberToDelete.id) };
-    onUpdateTrip(updatedTrip);
+    const updatedMembers = trip.members.filter(m => m.id !== memberToDelete.id);
+    onUpdateTrip({ members: updatedMembers });
     setMemberToDelete(null);
   };
 
@@ -281,7 +283,7 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
                     <CardTitle>{trip.name}</CardTitle>
                     {trip.description && <CardDescription>{trip.description}</CardDescription>}
                 </div>
-                <Button variant="outline" size="sm" onClick={() => setIsShareDialogOpen(true)}>
+                <Button variant="outline" size="sm" onClick={generateShareableLink}>
                     <Share2 className="mr-2 h-4 w-4" />
                     Share
                 </Button>
@@ -388,5 +390,3 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
     </>
   );
 }
-
-    

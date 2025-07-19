@@ -1,9 +1,9 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { v4 as uuidv4 } from 'uuid';
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import type { DateRange } from "react-day-picker";
@@ -46,7 +46,7 @@ const formSchema = z.object({
 });
 
 type CreateTripFormProps = {
-  onTripCreated: (newTrip: Trip) => void;
+  onTripCreated: (newTrip: Omit<Trip, 'id' | 'ownerId'>) => void;
 };
 
 export function CreateTripForm({ onTripCreated }: CreateTripFormProps) {
@@ -69,8 +69,7 @@ export function CreateTripForm({ onTripCreated }: CreateTripFormProps) {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    const newTrip: Trip = {
-      id: uuidv4(),
+    const newTripData: Omit<Trip, 'id' | 'ownerId'> = {
       name: values.name,
       description: values.description,
       startDate: values.dateRange?.from?.toISOString(),
@@ -81,7 +80,7 @@ export function CreateTripForm({ onTripCreated }: CreateTripFormProps) {
       expenses: [],
       settlements: [],
     };
-    onTripCreated(newTrip);
+    onTripCreated(newTripData);
     form.reset();
   }
 
