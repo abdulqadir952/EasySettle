@@ -43,6 +43,7 @@ const formSchema = z.object({
   splitBetween: z.array(z.string()).min(1, "Expense must be split with at least one member."),
   customSplits: z.record(z.coerce.number()).optional(),
   receiptImage: z.any().optional(),
+  settled: z.boolean().default(false),
 }).refine(data => {
   if (data.splitType === 'custom') {
     const totalCustom = Object.values(data.customSplits ?? {}).reduce((sum, val) => sum + (val || 0), 0);
@@ -79,6 +80,7 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
       splitBetween: members.map(m => m.id),
       customSplits: {},
       receiptImage: undefined,
+      settled: false,
     },
   });
 
@@ -91,6 +93,7 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
         date: expenseToEdit.date ? new Date(expenseToEdit.date) : new Date(),
         splitType: expenseToEdit.splitType,
         splitBetween: expenseToEdit.splitBetween.map(s => s.memberId),
+        settled: expenseToEdit.settled,
         // customSplits not handled in this version
         receiptImage: undefined,
       });
@@ -104,6 +107,7 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
             splitBetween: members.map(m => m.id),
             customSplits: {},
             receiptImage: undefined,
+            settled: false,
         });
     }
   }, [expenseToEdit, form, members]);
@@ -167,6 +171,7 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
                 share: values.splitType === 'custom' ? values.customSplits?.[memberId] : undefined,
             })),
             receiptImageUrl: receiptImageUrl || expenseToEdit.receiptImageUrl,
+            settled: values.settled,
         };
         onExpenseUpdated(updatedExpense);
     } else {
@@ -182,6 +187,7 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
           })),
           date: (values.date ?? new Date()).toISOString(),
           receiptImageUrl,
+          settled: values.settled,
         };
         onExpenseAdded(newExpense);
     }

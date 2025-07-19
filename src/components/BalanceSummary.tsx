@@ -23,10 +23,17 @@ const calculateBalances = (trip: Trip) => {
     const totalPaid: { [memberId: string]: number } = {};
     trip.members.forEach(m => totalPaid[m.id] = 0);
 
+    // Calculate total paid by each member (includes all expenses)
     trip.expenses.forEach(expense => {
+        totalPaid[expense.paidBy] = (totalPaid[expense.paidBy] || 0) + expense.amount;
+    });
+
+    // Calculate balances for settlement (only unsettled expenses)
+    const unsettledExpenses = trip.expenses.filter(e => !e.settled);
+
+    unsettledExpenses.forEach(expense => {
         // Add to the balance of the person who paid
         balances[expense.paidBy] += expense.amount;
-        totalPaid[expense.paidBy] = (totalPaid[expense.paidBy] || 0) + expense.amount;
 
         const totalSplits = expense.splitBetween.length;
         if (totalSplits === 0) return;
@@ -95,7 +102,7 @@ export function BalanceSummary({ trip }: BalanceSummaryProps) {
             <Card>
                 <CardHeader>
                     <CardTitle>Who Paid What</CardTitle>
-                    <CardDescription>Total amount paid by each member towards expenses.</CardDescription>
+                    <CardDescription>Total amount paid by each member towards all expenses (including settled).</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -122,7 +129,7 @@ export function BalanceSummary({ trip }: BalanceSummaryProps) {
                     <div className="flex justify-between items-center">
                         <div>
                             <CardTitle>Settlements</CardTitle>
-                            <CardDescription>The simplest way to settle all the debts.</CardDescription>
+                            <CardDescription>The simplest way to settle all remaining debts.</CardDescription>
                         </div>
                         <Button variant="outline" size="sm" onClick={() => exportTripToExcel(trip)} disabled={trip.expenses.length === 0}>
                             <Download className="mr-2 h-4 w-4" />

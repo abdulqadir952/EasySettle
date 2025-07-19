@@ -32,6 +32,7 @@ export interface Expense {
   notes?: string;
   receiptImageUrl?: string;
   date: string;
+  settled: boolean;
 }
 
 export interface Settlement {

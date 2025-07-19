@@ -13,9 +13,16 @@ const calculateBalances = (trip: Trip) => {
     const totalPaid: { [memberId: string]: number } = {};
     trip.members.forEach(m => totalPaid[m.id] = 0);
 
+    // Calculate total paid by each member (includes all expenses)
     trip.expenses.forEach(expense => {
-        balances[expense.paidBy] += expense.amount;
         totalPaid[expense.paidBy] = (totalPaid[expense.paidBy] || 0) + expense.amount;
+    });
+
+    // Calculate balances for settlement (only unsettled expenses)
+    const unsettledExpenses = trip.expenses.filter(e => !e.settled);
+
+    unsettledExpenses.forEach(expense => {
+        balances[expense.paidBy] += expense.amount;
 
         const totalSplits = expense.splitBetween.length;
         if (totalSplits === 0) return;
@@ -115,9 +122,10 @@ export const exportTripToExcel = (trip: Trip) => {
         'Paid By': getMemberName(expense.paidBy),
         'Amount': expense.amount,
         'Split Between': expense.splitBetween.map(s => getMemberName(s.memberId)).join(', '),
+        'Status': expense.settled ? 'Settled' : 'Unsettled',
     }));
     const expensesSheet = XLSX.utils.json_to_sheet(expensesData);
-    expensesSheet['!cols'] = [{ wch: 12 }, { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 40 }];
+    expensesSheet['!cols'] = [{ wch: 12 }, { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 40 }, { wch: 15 }];
     expensesData.forEach((_, index) => {
         const cellRef = `D${index + 2}`;
          if (expensesSheet[cellRef]) {

@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { v4 as uuidv4 } from 'uuid';
 import {
-  ArrowLeft, Users, Receipt, Scale, PlusCircle, Landmark, UserPlus, Trash2, Calendar, Phone, FileScan, Pencil, Eye
+  ArrowLeft, Users, Receipt, Scale, PlusCircle, Landmark, UserPlus, Trash2, Calendar, Phone, FileScan, Pencil, Eye, Copy, Share2
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -13,13 +13,15 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Trip, Member, Expense } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { AddExpenseForm } from "./AddExpenseForm";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { BalanceSummary } from "./BalanceSummary";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 
 type TripDashboardProps = {
@@ -31,6 +33,7 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
   // Dialog states
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
   const [viewingExpense, setViewingExpense] = useState<Expense | null>(null);
 
@@ -48,6 +51,12 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
   const { toast } = useToast();
   const totalExpenses = trip.expenses.reduce((sum, exp) => sum + exp.amount, 0);
   const getMemberName = (id: string) => trip.members.find(m => m.id === id)?.name || 'Unknown Member';
+  const shareableLink = typeof window !== 'undefined' ? `${window.location.origin}/share/${trip.id}` : '';
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareableLink);
+    toast({ title: "Link Copied!", description: "The shareable link has been copied to your clipboard." });
+  };
 
   // Expense Handlers
   const handleAddExpense = (newExpense: Expense) => {
@@ -71,6 +80,14 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
     const updatedTrip = { ...trip, expenses: trip.expenses.filter(e => e.id !== expenseToDelete.id) };
     onUpdateTrip(updatedTrip);
     setExpenseToDelete(null);
+  };
+
+  const handleToggleSettle = (expenseId: string, settled: boolean) => {
+    const updatedTrip = {
+      ...trip,
+      expenses: trip.expenses.map(e => e.id === expenseId ? { ...e, settled } : e)
+    };
+    onUpdateTrip(updatedTrip);
   };
 
   const openAddExpenseDialog = () => {
@@ -229,6 +246,23 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
         </AlertDialogContent>
       </AlertDialog>
 
+      <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>Share Trip Summary</DialogTitle>
+                <DialogDescription>
+                    Anyone with this link can view a read-only summary of the trip.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center space-x-2">
+                <Input value={shareableLink} readOnly />
+                <Button onClick={handleCopyLink} size="icon">
+                    <Copy className="h-4 w-4" />
+                </Button>
+            </div>
+        </DialogContent>
+      </Dialog>
+
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -242,7 +276,16 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
       <main className="flex-1">
         <div className="container mx-auto p-4 sm:p-6 lg:p-8">
           <Card className="mb-8">
-            <CardHeader><CardTitle>{trip.name}</CardTitle>{trip.description && <CardDescription>{trip.description}</CardDescription>}</CardHeader>
+            <CardHeader className="flex flex-row items-start justify-between">
+                <div>
+                    <CardTitle>{trip.name}</CardTitle>
+                    {trip.description && <CardDescription>{trip.description}</CardDescription>}
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setIsShareDialogOpen(true)}>
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Share
+                </Button>
+            </CardHeader>
             <CardContent className="grid sm:grid-cols-3 gap-4">
                 <div className="flex items-center space-x-3"><Calendar className="w-5 h-5 text-muted-foreground"/><p className="text-sm">{(trip.startDate && trip.endDate) ? `${format(new Date(trip.startDate), "PPP")} - ${format(new Date(trip.endDate), "PPP")}` : 'No dates set'}</p></div>
                 <div className="flex items-center space-x-3"><Users className="w-5 h-5 text-muted-foreground"/><p className="text-sm">{trip.members.length} Members</p></div>
@@ -263,18 +306,28 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
                   {trip.expenses.length > 0 ? (
                     <ul className="space-y-4">
                       {trip.expenses.map(expense => (
-                        <li key={expense.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                          <div>
-                            <p className="font-semibold">{expense.title}</p>
-                            <p className="text-sm text-muted-foreground">Paid by {getMemberName(expense.paidBy)}</p>
+                        <li key={expense.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-secondary/50 rounded-lg gap-4">
+                          <div className="flex-1">
+                              <p className={cn("font-semibold", expense.settled && "line-through")}>{expense.title}</p>
+                              <p className="text-sm text-muted-foreground">Paid by {getMemberName(expense.paidBy)}</p>
                           </div>
-                          <div className="flex items-center gap-1">
-                             <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewingExpense(expense)}><Eye className="h-4 w-4 text-muted-foreground" /></Button>
-                             {expense.receiptImageUrl && (<Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewingReceipt(expense.receiptImageUrl!)}><FileScan className="h-4 w-4 text-muted-foreground" /></Button>)}
-                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => openEditExpenseDialog(expense)}><Pencil className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive/70 hover:text-destructive" onClick={() => setExpenseToDelete(expense)}><Trash2 className="h-4 w-4" /></Button>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewingExpense(expense)}><Eye className="h-4 w-4 text-muted-foreground" /></Button>
+                                {expense.receiptImageUrl && (<Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewingReceipt(expense.receiptImageUrl!)}><FileScan className="h-4 w-4 text-muted-foreground" /></Button>)}
+                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => openEditExpenseDialog(expense)}><Pencil className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive/70 hover:text-destructive" onClick={() => setExpenseToDelete(expense)}><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id={`settle-${expense.id}`}
+                                    checked={expense.settled}
+                                    onCheckedChange={(checked) => handleToggleSettle(expense.id, checked)}
+                                />
+                                <Label htmlFor={`settle-${expense.id}`} className="text-sm font-medium">Settled</Label>
+                            </div>
                             <div className="text-right w-24">
-                                <p className="font-bold text-lg text-primary truncate">{formatCurrency(expense.amount, trip.currency)}</p>
+                                <p className={cn("font-bold text-lg text-primary truncate", expense.settled && "line-through")}>{formatCurrency(expense.amount, trip.currency)}</p>
                                 <p className="text-sm text-muted-foreground">{format(new Date(expense.date), "PPP")}</p>
                             </div>
                           </div>
