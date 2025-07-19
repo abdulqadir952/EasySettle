@@ -222,7 +222,7 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <FormField
             control={form.control}
             name="amount"
@@ -240,19 +240,21 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
               control={form.control}
               name="date"
               render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem className="flex flex-col sm:col-span-2">
                       <FormLabel>Date</FormLabel>
                       <Popover>
                           <PopoverTrigger asChild>
                               <Button
                                   variant={"outline"}
                                   className={cn(
-                                      "justify-start text-left font-normal",
+                                      "justify-start text-left font-normal w-full",
                                       !field.value && "text-muted-foreground"
                                   )}
                               >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                  <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                                  <span className="truncate">
+                                    {field.value ? format(field.value, "PPP") : "Pick a date"}
+                                  </span>
                               </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
