@@ -279,7 +279,7 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
                               <p className={cn("font-semibold", expense.settled && "line-through")}>{expense.title}</p>
                               <p className="text-sm text-muted-foreground">Paid by {getMemberName(expense.paidBy)}</p>
                           </div>
-                          <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center flex-wrap justify-end gap-x-2 gap-y-4">
                             <div className="flex items-center gap-1">
                                 <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewingExpense(expense)}><Eye className="h-4 w-4 text-muted-foreground" /></Button>
                                 {expense.receiptImageUrl && (<Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewingReceipt(expense.receiptImageUrl!)}><FileScan className="h-4 w-4 text-muted-foreground" /></Button>)}
@@ -294,9 +294,9 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
                                 />
                                 <Label htmlFor={`settle-${expense.id}`} className="text-sm font-medium">Settled</Label>
                             </div>
-                            <div className="text-right w-24">
+                            <div className="text-right w-28 shrink-0">
                                 <p className={cn("font-bold text-lg text-primary truncate", expense.settled && "line-through")}>{formatCurrency(expense.amount, trip.currency)}</p>
-                                <p className="text-sm text-muted-foreground">{format(new Date(expense.date), "PPP")}</p>
+                                <p className="text-xs text-muted-foreground">{format(new Date(expense.date), "PPP")}</p>
                             </div>
                           </div>
                         </li>
@@ -359,5 +359,3 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
     </>
   );
 }
-
-    

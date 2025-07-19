@@ -7,11 +7,12 @@ import {
   Bar,
   XAxis,
   YAxis,
-  Tooltip as RechartsTooltip,
   PieChart,
   Pie,
   Cell,
-  Legend
+  Legend,
+  ResponsiveContainer,
+  LabelList
 } from 'recharts';
 import { format } from 'date-fns';
 
@@ -53,10 +54,22 @@ const chartColors = [
     'hsl(var(--secondary))',
 ];
 
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+        <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs font-bold">
+            {`${(percent * 100).toFixed(0)}%`}
+        </text>
+    );
+};
+
+
 export function VisualizeExpenses({ trip }: VisualizeExpensesProps) {
   const [chartType, setChartType] = React.useState<ChartType>('contributionByMember');
-
-  const getMemberName = (id: string) => trip.members.find(m => m.id === id)?.name || 'Unknown Member';
 
   const contributionByMemberData = React.useMemo(() => {
     const memberTotals: { [memberId: string]: number } = {};
@@ -116,22 +129,24 @@ export function VisualizeExpenses({ trip }: VisualizeExpensesProps) {
             <CardContent>
               {contributionByMemberData.length > 0 ? (
                 <ChartContainer config={{}} className="mx-auto aspect-square h-[300px]">
-                  <PieChart>
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent
-                          formatter={(value, name) => `${name}: ${formatCurrency(value as number, trip.currency)}`}
-                          nameKey="name"
-                          hideLabel 
-                      />}
-                    />
-                    <Pie data={contributionByMemberData} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5} labelLine={false} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
-                      {contributionByMemberData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
-                      ))}
-                    </Pie>
-                    <Legend/>
-                  </PieChart>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent
+                            formatter={(value, name) => `${name}: ${formatCurrency(value as number, trip.currency)}`}
+                            nameKey="name"
+                            hideLabel 
+                        />}
+                      />
+                      <Pie data={contributionByMemberData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" labelLine={false} label={renderCustomizedLabel}>
+                        {contributionByMemberData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                        ))}
+                      </Pie>
+                      <Legend/>
+                    </PieChart>
+                  </ResponsiveContainer>
                 </ChartContainer>
               ) : (
                 <p className="text-muted-foreground text-center py-8">No spending to visualize yet.</p>
@@ -150,22 +165,24 @@ export function VisualizeExpenses({ trip }: VisualizeExpensesProps) {
                 <CardContent>
                 {expensesByCategoryData.length > 0 ? (
                     <ChartContainer config={{}} className="mx-auto aspect-square h-[300px]">
-                    <PieChart>
-                        <ChartTooltip
-                        cursor={false}
-                        content={<ChartTooltipContent
-                            formatter={(value, name) => `${name}: ${formatCurrency(value as number, trip.currency)}`}
-                            nameKey="name"
-                            hideLabel 
-                        />}
-                        />
-                        <Pie data={expensesByCategoryData} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5} labelLine={false} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
-                        {expensesByCategoryData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
-                        ))}
-                        </Pie>
-                        <Legend/>
-                    </PieChart>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent
+                                formatter={(value, name) => `${name}: ${formatCurrency(value as number, trip.currency)}`}
+                                nameKey="name"
+                                hideLabel 
+                            />}
+                            />
+                            <Pie data={expensesByCategoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" labelLine={false} label={renderCustomizedLabel}>
+                            {expensesByCategoryData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                            ))}
+                            </Pie>
+                            <Legend/>
+                        </PieChart>
+                      </ResponsiveContainer>
                     </ChartContainer>
                 ) : (
                     <p className="text-muted-foreground text-center py-8">No spending to visualize yet.</p>
