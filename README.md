@@ -77,9 +77,3 @@ EasySettle/
 ## Contributing
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
-## License
-[MIT](LICENSE)
-
----
-
-> **Note:** This project is for educational/demo purposes. Be sure to secure your environment variables and secrets in production.
