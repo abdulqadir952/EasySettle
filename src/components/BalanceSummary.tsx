@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Trip } from '@/lib/types';
@@ -8,13 +9,22 @@ import { ArrowRight, Download } from 'lucide-react';
 import { Button } from './ui/button';
 import { exportTripToExcel } from '@/lib/excel-export';
 
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
+import { PieChart, Pie, Cell, Tooltip } from 'recharts';
+import * as React from 'react';
+
+
 type BalanceSummaryProps = {
   trip: Trip;
 };
 
 const calculateBalances = (trip: Trip) => {
     if (trip.members.length === 0) {
-        return { settlements: [], totalPaid: {} };
+        return { settlements: [], totalPaid: {}, memberTotals: [] };
     }
 
     const balances: { [memberId: string]: number } = {};
@@ -81,13 +91,27 @@ const calculateBalances = (trip: Trip) => {
         }
     }
     
-    return { settlements, totalPaid };
+    const memberTotals = trip.members.map(member => ({
+        name: member.name,
+        value: totalPaid[member.id] || 0,
+    })).filter(item => item.value > 0);
+
+    return { settlements, totalPaid, memberTotals };
 };
 
 
 export function BalanceSummary({ trip }: BalanceSummaryProps) {
-    const { settlements, totalPaid } = calculateBalances(trip);
+    const { settlements, totalPaid, memberTotals } = calculateBalances(trip);
     const getMemberName = (id: string) => trip.members.find(m => m.id === id)?.name || 'Unknown Member';
+
+    const chartColors = [
+        'hsl(var(--primary))',
+        'hsl(var(--accent))',
+        'hsl(var(--secondary))',
+        'hsl(240, 60%, 65%)',
+        'hsl(180, 60%, 65%)',
+        'hsl(300, 60%, 65%)',
+    ];
 
     if (trip.members.length === 0) {
         return <p className="text-muted-foreground text-center py-8">Add members to see a summary.</p>;
@@ -99,6 +123,42 @@ export function BalanceSummary({ trip }: BalanceSummaryProps) {
     
     return (
         <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Spending Breakdown</CardTitle>
+                    <CardDescription>A visual breakdown of who paid for what.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {memberTotals.length > 0 ? (
+                    <ChartContainer config={{}} className="mx-auto aspect-square h-[250px]">
+                        <PieChart>
+                            <Tooltip
+                                cursor={false}
+                                content={<ChartTooltipContent
+                                    formatter={(value, name) => `${name}: ${formatCurrency(value as number, trip.currency)}`}
+                                    nameKey="name"
+                                    hideLabel 
+                                />}
+                            />
+                            <Pie
+                                data={memberTotals}
+                                dataKey="value"
+                                nameKey="name"
+                                innerRadius={60}
+                                strokeWidth={5}
+                            >
+                                {memberTotals.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                                ))}
+                            </Pie>
+                        </PieChart>
+                    </ChartContainer>
+                    ) : (
+                        <p className="text-muted-foreground text-center py-8">No spending to visualize yet.</p>
+                    )}
+                </CardContent>
+            </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle>Who Paid What</CardTitle>

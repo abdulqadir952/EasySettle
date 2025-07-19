@@ -3,12 +3,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle, Landmark, Trash2, Pencil, LogOut } from "lucide-react";
+import { PlusCircle, Landmark, Trash2, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { signInWithPopup, signOut } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -46,8 +45,6 @@ import type { Trip } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useAuth } from "@/contexts/AuthContext";
-import { auth, googleProvider } from "@/lib/firebase";
 import { useTrips } from "@/hooks/useTrips";
 
 const editTripSchema = z.object({
@@ -65,7 +62,6 @@ export default function Home() {
   const [tripToDelete, setTripToDelete] = useState<Trip | null>(null);
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth();
   const { trips, loading, addTrip, updateTrip, deleteTrip } = useTrips();
 
   const editForm = useForm<z.infer<typeof editTripSchema>>({
@@ -81,66 +77,30 @@ export default function Home() {
     }
   }, [tripToEdit, editForm]);
 
-  const handleLogin = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (error) {
-      console.error("Error during sign-in:", error);
-      toast({ variant: 'destructive', title: "Login Failed", description: "Could not sign in with Google." });
-    }
+
+  const handleTripCreated = (newTrip: Trip) => {
+    addTrip(newTrip);
+    setIsCreateDialogOpen(false);
+    router.push(`/trips/${newTrip.id}`);
   };
 
-  const handleLogout = async () => {
-    await signOut(auth);
-  };
-
-
-  const handleTripCreated = async (newTripData: Omit<Trip, 'id' | 'ownerId'>) => {
-    const newTrip = await addTrip(newTripData);
-    if (newTrip) {
-      setIsCreateDialogOpen(false);
-      router.push(`/trips/${newTrip.id}`);
-    }
-  };
-
-  const handleTripUpdated = async (values: z.infer<typeof editTripSchema>) => {
+  const handleTripUpdated = (values: z.infer<typeof editTripSchema>) => {
     if (!tripToEdit) return;
-    await updateTrip(tripToEdit.id, { name: values.name, description: values.description });
+    updateTrip(tripToEdit.id, {
+        name: values.name,
+        description: values.description || ""
+    });
     setIsEditDialogOpen(false);
     setTripToEdit(null);
     toast({ title: "Success", description: "Trip details have been updated." });
   }
 
-  const handleDeleteTrip = async (tripId: string) => {
-    await deleteTrip(tripId);
+  const handleDeleteTrip = (tripId: string) => {
+    deleteTrip(tripId);
     setTripToDelete(null);
   };
 
   const totalExpenses = (trip: Trip) => trip.expenses.reduce((sum, exp) => sum + exp.amount, 0);
-  
-  if (!user) {
-    return (
-       <div className="flex flex-col items-center justify-center min-h-screen bg-background">
-          <Card className="max-w-sm w-full p-6 text-center">
-            <CardHeader>
-              <div className="flex justify-center items-center mb-4">
-                <Landmark className="h-12 w-12 text-primary" />
-              </div>
-              <CardTitle className="text-3xl">Welcome to Settleasy</CardTitle>
-              <CardDescription>
-                Track and settle shared expenses for your trips with ease. Sign in to get started.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={handleLogin} className="w-full">
-                <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 23.4 172.9 61.9l-76.2 64.5C308.6 102.3 282.7 92 248.4 92c-88.8 0-160.1 72.1-160.1 162.2s71.3 162.2 160.1 162.2c101.8 0 138-70.5 143.3-106.6H248.4v-81.8h239.6c2.5 12.7 3.9 26.1 3.9 40.8z"></path></svg>
-                Sign in with Google
-              </Button>
-            </CardContent>
-          </Card>
-      </div>
-    )
-  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -151,7 +111,7 @@ export default function Home() {
               <Landmark className="h-8 w-8 text-primary" />
               <h1 className="text-2xl font-bold tracking-tight">Settleasy</h1>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
                 <ThemeToggle />
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
@@ -170,9 +130,6 @@ export default function Home() {
                     <CreateTripForm onTripCreated={handleTripCreated} />
                 </DialogContent>
                 </Dialog>
-                <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
-                  <LogOut className="h-5 w-5" />
-                </Button>
             </div>
           </div>
         </div>

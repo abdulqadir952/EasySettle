@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 import { useState, useEffect } from "react";
+import { v4 as uuidv4 } from 'uuid';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +47,7 @@ const formSchema = z.object({
 });
 
 type CreateTripFormProps = {
-  onTripCreated: (newTrip: Omit<Trip, 'id' | 'ownerId'>) => void;
+  onTripCreated: (newTrip: Trip) => void;
 };
 
 export function CreateTripForm({ onTripCreated }: CreateTripFormProps) {
@@ -69,18 +70,25 @@ export function CreateTripForm({ onTripCreated }: CreateTripFormProps) {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    const newTripData: Omit<Trip, 'id' | 'ownerId'> = {
+    const newTrip: Trip = {
+      id: uuidv4(),
       name: values.name,
-      description: values.description,
-      startDate: values.dateRange?.from?.toISOString(),
-      endDate: values.dateRange?.to?.toISOString(),
+      description: values.description || "",
       currency: values.currency,
       createdAt: new Date().toISOString(),
       members: [],
       expenses: [],
       settlements: [],
     };
-    onTripCreated(newTripData);
+
+    if (values.dateRange?.from) {
+        newTrip.startDate = values.dateRange.from.toISOString();
+    }
+    if (values.dateRange?.to) {
+        newTrip.endDate = values.dateRange.to.toISOString();
+    }
+
+    onTripCreated(newTrip);
     form.reset();
   }
 

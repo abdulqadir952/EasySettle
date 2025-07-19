@@ -170,7 +170,7 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
                 memberId,
                 share: values.splitType === 'custom' ? values.customSplits?.[memberId] : undefined,
             })),
-            receiptImageUrl: receiptImageUrl || expenseToEdit.receiptImageUrl,
+            receiptImageUrl: receiptImageUrl || expenseToEdit.receiptImageUrl || "",
             settled: values.settled,
         };
         onExpenseUpdated(updatedExpense);
@@ -186,7 +186,7 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
             share: values.splitType === 'custom' ? values.customSplits?.[memberId] : undefined,
           })),
           date: (values.date ?? new Date()).toISOString(),
-          receiptImageUrl,
+          receiptImageUrl: receiptImageUrl || "",
           settled: values.settled,
         };
         onExpenseAdded(newExpense);

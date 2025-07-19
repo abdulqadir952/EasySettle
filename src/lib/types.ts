@@ -1,14 +1,13 @@
 
 export interface Trip {
   id: string;
-  ownerId: string;
   name: string;
   currency: string;
   createdAt: string;
   members: Member[];
   expenses: Expense[];
   settlements: Settlement[];
-  description?: string;
+  description: string;
   startDate?: string;
   endDate?:string;
 }
@@ -16,7 +15,7 @@ export interface Trip {
 export interface Member {
   id: string;
   name: string;
-  phone?: string;
+  phone: string;
 }
 
 export interface ExpenseSplit {
@@ -32,7 +31,7 @@ export interface Expense {
   splitBetween: { memberId: string; share?: number }[];
   splitType: 'equally' | 'custom';
   notes?: string;
-  receiptImageUrl?: string;
+  receiptImageUrl: string;
   date: string;
   settled: boolean;
 }

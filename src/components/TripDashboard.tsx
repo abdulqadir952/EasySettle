@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { v4 as uuidv4 } from 'uuid';
 import {
-  ArrowLeft, Users, Receipt, Scale, PlusCircle, Landmark, UserPlus, Trash2, Calendar, Phone, FileScan, Pencil, Eye, Copy, Share2
+  ArrowLeft, Users, Receipt, Scale, PlusCircle, Landmark, UserPlus, Trash2, Calendar, Phone, FileScan, Pencil, Eye, LineChart
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -20,20 +20,20 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { BalanceSummary } from "./BalanceSummary";
+import { VisualizeExpenses } from "./VisualizeExpenses";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 
 type TripDashboardProps = {
   trip: Trip;
-  onUpdateTrip: (updatedData: Partial<Trip>) => void;
+  onUpdateTrip: (tripId: string, updatedData: Partial<Trip>) => void;
 };
 
 export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
   // Dialog states
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
   const [viewingExpense, setViewingExpense] = useState<Expense | null>(null);
 
@@ -48,35 +48,21 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberPhone, setNewMemberPhone] = useState("");
   
-  const [shareableLink, setShareableLink] = useState("");
-
   const { toast } = useToast();
   const totalExpenses = trip.expenses.reduce((sum, exp) => sum + exp.amount, 0);
   const getMemberName = (id: string) => trip.members.find(m => m.id === id)?.name || 'Unknown Member';
   
-  const generateShareableLink = () => {
-    if (typeof window !== 'undefined') {
-        const link = `${window.location.origin}/share?id=${trip.id}`;
-        setShareableLink(link);
-        setIsShareDialogOpen(true);
-    }
-  };
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareableLink);
-    toast({ title: "Link Copied!", description: "The shareable link has been copied to your clipboard." });
-  };
 
   // Expense Handlers
   const handleAddExpense = (newExpense: Expense) => {
     const updatedExpenses = [...trip.expenses, newExpense].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    onUpdateTrip({ expenses: updatedExpenses });
+    onUpdateTrip(trip.id, { expenses: updatedExpenses });
     setIsExpenseDialogOpen(false);
   };
 
   const handleUpdateExpense = (updatedExpense: Expense) => {
     const updatedExpenses = trip.expenses.map(e => e.id === updatedExpense.id ? updatedExpense : e).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    onUpdateTrip({ expenses: updatedExpenses });
+    onUpdateTrip(trip.id, { expenses: updatedExpenses });
     setIsExpenseDialogOpen(false);
     setExpenseToEdit(null);
   };
@@ -84,13 +70,13 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
   const handleDeleteExpense = () => {
     if (!expenseToDelete) return;
     const updatedExpenses = trip.expenses.filter(e => e.id !== expenseToDelete.id);
-    onUpdateTrip({ expenses: updatedExpenses });
+    onUpdateTrip(trip.id, { expenses: updatedExpenses });
     setExpenseToDelete(null);
   };
 
   const handleToggleSettle = (expenseId: string, settled: boolean) => {
     const updatedExpenses = trip.expenses.map(e => e.id === expenseId ? { ...e, settled } : e);
-    onUpdateTrip({ expenses: updatedExpenses });
+    onUpdateTrip(trip.id, { expenses: updatedExpenses });
   };
 
   const openAddExpenseDialog = () => {
@@ -107,9 +93,9 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
   const handleAddMember = (e: React.FormEvent) => {
     e.preventDefault();
     if (newMemberName.trim()) {
-        const newMember: Member = { id: uuidv4(), name: newMemberName.trim(), phone: newMemberPhone.trim() || undefined };
+        const newMember: Member = { id: uuidv4(), name: newMemberName.trim(), phone: newMemberPhone.trim() };
         const updatedMembers = [...trip.members, newMember];
-        onUpdateTrip({ members: updatedMembers });
+        onUpdateTrip(trip.id, { members: updatedMembers });
         setIsAddMemberDialogOpen(false);
         setNewMemberName("");
         setNewMemberPhone("");
@@ -119,9 +105,9 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
   const handleUpdateMember = (e: React.FormEvent) => {
     e.preventDefault();
     if (memberToEdit && newMemberName.trim()) {
-        const updatedMember: Member = { ...memberToEdit, name: newMemberName.trim(), phone: newMemberPhone.trim() || undefined };
+        const updatedMember: Member = { ...memberToEdit, name: newMemberName.trim(), phone: newMemberPhone.trim() };
         const updatedMembers = trip.members.map(m => m.id === memberToEdit.id ? updatedMember : m);
-        onUpdateTrip({ members: updatedMembers });
+        onUpdateTrip(trip.id, { members: updatedMembers });
         setMemberToEdit(null);
     }
   };
@@ -138,7 +124,7 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
         return;
     }
     const updatedMembers = trip.members.filter(m => m.id !== memberToDelete.id);
-    onUpdateTrip({ members: updatedMembers });
+    onUpdateTrip(trip.id, { members: updatedMembers });
     setMemberToDelete(null);
   };
 
@@ -241,29 +227,12 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
       <AlertDialog open={!!memberToDelete} onOpenChange={() => setMemberToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Delete {memberToDelete?.name}?</AlertDialogTitle>
+                <DialogTitle>Delete {memberToDelete?.name}?</DialogTitle>
                 <AlertDialogDescription>Are you sure you want to remove this member? This cannot be undone if they are not involved in any expenses.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteMember}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-                <DialogTitle>Share Trip Summary</DialogTitle>
-                <DialogDescription>
-                    Anyone with this link can view a read-only summary of the trip.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="flex items-center space-x-2">
-                <Input value={shareableLink} readOnly />
-                <Button onClick={handleCopyLink} size="icon">
-                    <Copy className="h-4 w-4" />
-                </Button>
-            </div>
-        </DialogContent>
-      </Dialog>
 
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -278,15 +247,11 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
       <main className="flex-1">
         <div className="container mx-auto p-4 sm:p-6 lg:p-8">
           <Card className="mb-8">
-            <CardHeader className="flex flex-row items-start justify-between">
+            <CardHeader>
                 <div>
                     <CardTitle>{trip.name}</CardTitle>
                     {trip.description && <CardDescription>{trip.description}</CardDescription>}
                 </div>
-                <Button variant="outline" size="sm" onClick={generateShareableLink}>
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Share
-                </Button>
             </CardHeader>
             <CardContent className="grid sm:grid-cols-3 gap-4">
                 <div className="flex items-center space-x-3"><Calendar className="w-5 h-5 text-muted-foreground"/><p className="text-sm">{(trip.startDate && trip.endDate) ? `${format(new Date(trip.startDate), "PPP")} - ${format(new Date(trip.endDate), "PPP")}` : 'No dates set'}</p></div>
@@ -296,9 +261,10 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
           </Card>
 
           <Tabs defaultValue="expenses">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="expenses"><Receipt className="mr-2 h-4 w-4" />Expenses</TabsTrigger>
               <TabsTrigger value="summary"><Scale className="mr-2 h-4 w-4" />Summary</TabsTrigger>
+               <TabsTrigger value="visualize"><LineChart className="mr-2 h-4 w-4" />Visualize</TabsTrigger>
               <TabsTrigger value="members"><Users className="mr-2 h-4 w-4" />Members</TabsTrigger>
             </TabsList>
             <TabsContent value="expenses" className="mt-6">
@@ -342,6 +308,9 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
             </TabsContent>
             <TabsContent value="summary" className="mt-6">
                 <BalanceSummary trip={trip} />
+            </TabsContent>
+             <TabsContent value="visualize" className="mt-6">
+                <VisualizeExpenses trip={trip} />
             </TabsContent>
             <TabsContent value="members" className="mt-6">
                <Card>
@@ -390,3 +359,5 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
     </>
   );
 }
+
+    
