@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import type { DateRange } from "react-day-picker";
+import { useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +50,15 @@ type CreateTripFormProps = {
 };
 
 export function CreateTripForm({ onTripCreated }: CreateTripFormProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -135,14 +145,15 @@ export function CreateTripForm({ onTripCreated }: CreateTripFormProps) {
                         )}
                     </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 max-w-[95vw]" align="start">
                     <Calendar
                         initialFocus
                         mode="range"
                         defaultMonth={field.value?.from}
                         selected={field.value}
                         onSelect={field.onChange}
-                        numberOfMonths={2}
+                        numberOfMonths={isMobile ? 1 : 2}
+                        className="max-w-full"
                     />
                     </PopoverContent>
                 </Popover>
