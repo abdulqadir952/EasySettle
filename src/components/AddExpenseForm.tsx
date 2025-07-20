@@ -361,12 +361,6 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
             render={({ field }) => (
             <FormItem>
                 <FormLabel>Receipt (Optional)</FormLabel>
-                {isEditMode && expenseToEdit?.receiptImageUrl && (
-                  <div className="my-2">
-                    <p className="text-sm text-muted-foreground mb-1">Current receipt:</p>
-                    <img src={expenseToEdit.receiptImageUrl} alt="Current receipt" className="max-h-32 rounded-md border" />
-                  </div>
-                )}
                 <FormControl>
                     <Input
                         type="file"

@@ -30,14 +30,14 @@ function TripPageContent() {
 
   if (loading || !trip) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center h-screen">
         <p>Loading trip data...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex-1 flex flex-col min-h-0">
       <TripDashboard
         trip={trip}
         onUpdateTrip={updateTrip}
@@ -49,7 +49,7 @@ function TripPageContent() {
 
 export default function TripPage() {
     return (
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+        <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
             <TripPageContent />
         </Suspense>
     )

@@ -21,29 +21,17 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased min-h-screen flex flex-col">
+      <body className="font-body antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-            <div className="flex-1 flex flex-col">
+            <div className="flex flex-col h-screen">
               {children}
             </div>
             <Toaster />
-            <footer className="py-4 border-t">
-              <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-muted-foreground">
-                <a
-                  href="https://www.linkedin.com/in/abdul-qadir-tinwala-3a3a041a2/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-primary transition-colors"
-                >
-                  Made with ❤️ by Abdul Qadir
-                </a>
-              </div>
-            </footer>
         </ThemeProvider>
       </body>
     </html>
