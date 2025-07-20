@@ -240,12 +240,12 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
           <div className="flex items-center justify-between h-16">
             <Button variant="ghost" asChild><Link href="/"><ArrowLeft className="mr-2 h-4 w-4" />Back to Trips</Link></Button>
             <div className="flex items-center space-x-3"><Landmark className="h-6 w-6 text-primary" /><h1 className="text-xl font-bold tracking-tight"></h1></div>
-            <Button onClick={openAddExpenseDialog} disabled={trip.members.length === 0}><PlusCircle className="mr-2 h-2 w-2" />Add Expense</Button>
+            <Button onClick={openAddExpenseDialog} disabled={trip.members.length === 0}><PlusCircle className="mr-2 h-4 w-4" />Add Expense</Button>
           </div>
         </div>
       </header>
 
-      <main className="flex-1">
+      <main className="flex-1 overflow-y-auto">
         <div className="container mx-auto p-4 sm:p-6 lg:p-8">
           <Card className="mb-8">
             <CardHeader>
@@ -369,6 +369,18 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
           </Tabs>
         </div>
       </main>
+      <footer className="py-4 border-t">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-muted-foreground">
+            <a
+            href="https://www.linkedin.com/in/abdul-qadir-tinwala-3a3a041a2/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-primary transition-colors"
+            >
+            Made with ❤️ by Abdul Qadir
+            </a>
+        </div>
+      </footer>
     </>
   );
 }
