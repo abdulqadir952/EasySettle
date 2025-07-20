@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -76,6 +77,7 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
       title: "",
       amount: 0,
       date: undefined,
+      paidBy: undefined,
       splitType: "equally",
       splitBetween: members.map(m => m.id),
       customSplits: {},
@@ -95,7 +97,7 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
         splitBetween: expenseToEdit.splitBetween.map(s => s.memberId),
         settled: expenseToEdit.settled,
         // customSplits not handled in this version
-        receiptImage: undefined,
+        receiptImage: undefined, // File inputs can't be pre-filled
       });
     } else {
         form.reset({
@@ -284,7 +286,7 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Paid by</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select who paid" />
@@ -359,6 +361,12 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
             render={({ field }) => (
             <FormItem>
                 <FormLabel>Receipt (Optional)</FormLabel>
+                {isEditMode && expenseToEdit?.receiptImageUrl && (
+                  <div className="my-2">
+                    <p className="text-sm text-muted-foreground mb-1">Current receipt:</p>
+                    <img src={expenseToEdit.receiptImageUrl} alt="Current receipt" className="max-h-32 rounded-md border" />
+                  </div>
+                )}
                 <FormControl>
                     <Input
                         type="file"
@@ -370,7 +378,7 @@ export function AddExpenseForm({ members, onExpenseAdded, onExpenseUpdated, expe
                     />
                 </FormControl>
                  <FormDescription>
-                    Upload a picture of the bill or receipt.
+                    {isEditMode ? 'Upload a new image to replace the current one.' : 'Upload a picture of the bill or receipt.'}
                 </FormDescription>
                 <FormMessage />
             </FormItem>

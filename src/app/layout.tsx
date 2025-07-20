@@ -28,8 +28,22 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-            {children}
+            <div className="flex-1 flex flex-col">
+              {children}
+            </div>
             <Toaster />
+            <footer className="py-4 border-t">
+              <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-muted-foreground">
+                <a
+                  href="https://www.linkedin.com/in/abdul-qadir-tinwala-3a3a041a2/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors"
+                >
+                  Made with ❤️ by Abdul Qadir
+                </a>
+              </div>
+            </footer>
         </ThemeProvider>
       </body>
     </html>

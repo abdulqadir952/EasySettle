@@ -5,9 +5,10 @@ import type { Trip } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Download } from 'lucide-react';
+import { ArrowRight, Download, FileArchive } from 'lucide-react';
 import { Button } from './ui/button';
 import { exportTripToExcel } from '@/lib/excel-export';
+import { exportBillsToZip } from '@/lib/zip-export';
 
 
 type BalanceSummaryProps = {
@@ -90,6 +91,7 @@ const calculateBalances = (trip: Trip) => {
 export function BalanceSummary({ trip }: BalanceSummaryProps) {
     const { settlements, totalPaid } = calculateBalances(trip);
     const getMemberName = (id: string) => trip.members.find(m => m.id === id)?.name || 'Unknown Member';
+    const hasReceipts = trip.expenses.some(e => e.receiptImageUrl);
 
     if (trip.members.length === 0) {
         return <p className="text-muted-foreground text-center py-8">Add members to see a summary.</p>;
@@ -128,15 +130,21 @@ export function BalanceSummary({ trip }: BalanceSummaryProps) {
 
             <Card>
                 <CardHeader>
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
                             <CardTitle>Settlements</CardTitle>
                             <CardDescription>The simplest way to settle all remaining debts.</CardDescription>
                         </div>
-                        <Button variant="outline" size="sm" onClick={() => exportTripToExcel(trip)} disabled={trip.expenses.length === 0}>
-                            <Download className="mr-2 h-4 w-4" />
-                            Export
-                        </Button>
+                        <div className="flex items-center gap-2 self-end sm:self-center">
+                             <Button variant="outline" size="sm" onClick={() => exportTripToExcel(trip)} disabled={trip.expenses.length === 0}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Export Excel
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => exportBillsToZip(trip)} disabled={!hasReceipts}>
+                                <FileArchive className="mr-2 h-4 w-4" />
+                                Export Bills
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>

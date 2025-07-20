@@ -11,8 +11,7 @@ import {
   Pie,
   Cell,
   Legend,
-  ResponsiveContainer,
-  LabelList
+  ResponsiveContainer
 } from 'recharts';
 import { format } from 'date-fns';
 
@@ -54,14 +53,16 @@ const chartColors = [
     'hsl(var(--secondary))',
 ];
 
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
+    if ((percent * 100) < 5) return null; // Don't render label if too small
+
     return (
-        <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs font-bold">
+        <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold">
             {`${(percent * 100).toFixed(0)}%`}
         </text>
     );
@@ -127,36 +128,36 @@ export function VisualizeExpenses({ trip }: VisualizeExpensesProps) {
                 <CardDescription>A pie chart showing the total amount paid by each member.</CardDescription>
             </CardHeader>
             <CardContent>
-              {contributionByMemberData.length > 0 ? (
+            {contributionByMemberData.length > 0 ? (
                 <ChartContainer config={{}} className="mx-auto aspect-square h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <ChartTooltip
+                    <ChartTooltip
                         cursor={false}
                         content={<ChartTooltipContent
                             formatter={(value, name) => `${name}: ${formatCurrency(value as number, trip.currency)}`}
                             nameKey="name"
                             hideLabel 
                         />}
-                      />
-                      <Pie data={contributionByMemberData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" labelLine={false} label={renderCustomizedLabel}>
+                    />
+                    <Pie data={contributionByMemberData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} labelLine={false} label={renderCustomizedLabel}>
                         {contributionByMemberData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                        <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
                         ))}
-                      </Pie>
-                      <Legend/>
+                    </Pie>
+                    <Legend/>
                     </PieChart>
-                  </ResponsiveContainer>
+                </ResponsiveContainer>
                 </ChartContainer>
-              ) : (
+            ) : (
                 <p className="text-muted-foreground text-center py-8">No spending to visualize yet.</p>
-              )}
+            )}
             </CardContent>
           </>
         );
       
       case 'expensesByCategory':
-        return (
+          return (
             <>
                 <CardHeader>
                     <CardTitle>Expenses by Category</CardTitle>
@@ -165,7 +166,7 @@ export function VisualizeExpenses({ trip }: VisualizeExpensesProps) {
                 <CardContent>
                 {expensesByCategoryData.length > 0 ? (
                     <ChartContainer config={{}} className="mx-auto aspect-square h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <ChartTooltip
                             cursor={false}
@@ -175,21 +176,21 @@ export function VisualizeExpenses({ trip }: VisualizeExpensesProps) {
                                 hideLabel 
                             />}
                             />
-                            <Pie data={expensesByCategoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" labelLine={false} label={renderCustomizedLabel}>
+                            <Pie data={expensesByCategoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} labelLine={false} label={renderCustomizedLabel}>
                             {expensesByCategoryData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
                             ))}
                             </Pie>
                             <Legend/>
                         </PieChart>
-                      </ResponsiveContainer>
+                    </ResponsiveContainer>
                     </ChartContainer>
                 ) : (
                     <p className="text-muted-foreground text-center py-8">No spending to visualize yet.</p>
                 )}
                 </CardContent>
             </>
-        );
+          );
 
       case 'spendingOverTime':
         return (
@@ -200,26 +201,30 @@ export function VisualizeExpenses({ trip }: VisualizeExpensesProps) {
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={{}} className="h-[300px] w-full">
-                        <BarChart data={spendingOverTimeData} margin={{ top: 20, right: 20, bottom: 5, left: 20 }}>
-                            <XAxis
-                                dataKey="date"
-                                tickLine={false}
-                                axisLine={false}
-                                tickMargin={8}
-                                tickFormatter={(value) => format(new Date(value), "MMM d")}
-                            />
-                             <YAxis
-                                tickFormatter={(value) => formatCurrency(value as number, trip.currency).replace(/\.00$/, '')}
-                            />
-                            <ChartTooltip
-                                cursor={false}
-                                content={<ChartTooltipContent
-                                    formatter={(value) => formatCurrency(value as number, trip.currency)}
-                                    labelFormatter={(label) => format(new Date(label), "PPP")}
-                                />}
-                            />
-                            <Bar dataKey="total" fill={chartColors[0]} radius={4} />
-                        </BarChart>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={spendingOverTimeData} margin={{ top: 20, right: 20, bottom: 5, left: 20 }}>
+                                <XAxis
+                                    dataKey="date"
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickMargin={8}
+                                    tickFormatter={(value) => format(new Date(value), "MMM d")}
+                                    stroke="hsl(var(--muted-foreground))"
+                                />
+                                <YAxis
+                                    tickFormatter={(value) => formatCurrency(value as number, trip.currency).replace(/\.00$/, '')}
+                                    stroke="hsl(var(--muted-foreground))"
+                                />
+                                <ChartTooltip
+                                    cursor={false}
+                                    content={<ChartTooltipContent
+                                        formatter={(value) => formatCurrency(value as number, trip.currency)}
+                                        labelFormatter={(label) => format(new Date(label), "PPP")}
+                                    />}
+                                />
+                                <Bar dataKey="total" fill="hsl(var(--primary))" radius={4} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </ChartContainer>
                 </CardContent>
             </>
@@ -228,7 +233,7 @@ export function VisualizeExpenses({ trip }: VisualizeExpensesProps) {
         return null;
     }
   };
-
+  
   return (
     <Card>
       <CardHeader>
@@ -238,20 +243,18 @@ export function VisualizeExpenses({ trip }: VisualizeExpensesProps) {
                 <CardDescription>Analyze your trip's spending with different charts.</CardDescription>
             </div>
             <Select onValueChange={(value: ChartType) => setChartType(value)} defaultValue={chartType}>
-              <SelectTrigger className="w-full sm:w-[240px]">
+            <SelectTrigger className="w-full sm:w-[240px]">
                 <SelectValue placeholder="Select a chart type" />
-              </SelectTrigger>
-              <SelectContent>
+            </SelectTrigger>
+            <SelectContent>
                 <SelectItem value="contributionByMember">Contribution by Member</SelectItem>
                 <SelectItem value="spendingOverTime">Spending Over Time</SelectItem>
                 <SelectItem value="expensesByCategory">Expenses by Category</SelectItem>
-              </SelectContent>
+            </SelectContent>
             </Select>
         </div>
       </CardHeader>
-      <CardContent>
-         {renderChart()}
-      </CardContent>
+      {renderChart()}
     </Card>
   );
 }
