@@ -23,6 +23,7 @@ import { BalanceSummary } from "./BalanceSummary";
 import { VisualizeExpenses } from "./VisualizeExpenses";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
 type TripDashboardProps = {
@@ -261,47 +262,59 @@ export function TripDashboard({ trip, onUpdateTrip }: TripDashboardProps) {
           </Card>
 
           <Tabs defaultValue="expenses">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="expenses"><Receipt className="mr-2 h-4 w-4" />Expenses</TabsTrigger>
-              <TabsTrigger value="summary"><Scale className="mr-2 h-4 w-4" />Summary</TabsTrigger>
-               <TabsTrigger value="visualize"><LineChart className="mr-2 h-4 w-4" />Visualize</TabsTrigger>
-              <TabsTrigger value="members"><Users className="mr-2 h-4 w-4" />Members</TabsTrigger>
-            </TabsList>
+             <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="expenses">
+                  <Receipt className="hidden sm:inline-block mr-2 h-4 w-4" />Expenses
+                </TabsTrigger>
+                <TabsTrigger value="summary">
+                  <Scale className="hidden sm:inline-block mr-2 h-4 w-4" />Summary
+                </TabsTrigger>
+                  <TabsTrigger value="visualize">
+                  <LineChart className="hidden sm:inline-block mr-2 h-4 w-4" />Visualize
+                </TabsTrigger>
+                <TabsTrigger value="members">
+                  <Users className="hidden sm:inline-block mr-2 h-4 w-4" />Members
+                </TabsTrigger>
+              </TabsList>
             <TabsContent value="expenses" className="mt-6">
               <Card>
                 <CardHeader><CardTitle>All Expenses</CardTitle><CardDescription>A complete log of all recorded expenses for this trip.</CardDescription></CardHeader>
                 <CardContent>
                   {trip.expenses.length > 0 ? (
-                    <ul className="space-y-4">
+                    <Accordion type="multiple" className="w-full">
                       {trip.expenses.map(expense => (
-                        <li key={expense.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-secondary/50 rounded-lg gap-4">
-                          <div className="flex-1">
-                              <p className={cn("font-semibold", expense.settled && "line-through")}>{expense.title}</p>
-                              <p className="text-sm text-muted-foreground">Paid by {getMemberName(expense.paidBy)}</p>
-                          </div>
-                          <div className="flex items-center flex-wrap justify-end gap-x-2 gap-y-4">
-                            <div className="flex items-center gap-1">
-                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewingExpense(expense)}><Eye className="h-4 w-4 text-muted-foreground" /></Button>
-                                {expense.receiptImageUrl && (<Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewingReceipt(expense.receiptImageUrl!)}><FileScan className="h-4 w-4 text-muted-foreground" /></Button>)}
-                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => openEditExpenseDialog(expense)}><Pencil className="h-4 w-4" /></Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive/70 hover:text-destructive" onClick={() => setExpenseToDelete(expense)}><Trash2 className="h-4 w-4" /></Button>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <Switch
-                                    id={`settle-${expense.id}`}
-                                    checked={expense.settled}
-                                    onCheckedChange={(checked) => handleToggleSettle(expense.id, checked)}
-                                />
-                                <Label htmlFor={`settle-${expense.id}`} className="text-sm font-medium">Settled</Label>
-                            </div>
-                            <div className="text-right w-28 shrink-0">
-                                <p className={cn("font-bold text-lg text-primary truncate", expense.settled && "line-through")}>{formatCurrency(expense.amount, trip.currency)}</p>
-                                <p className="text-xs text-muted-foreground">{format(new Date(expense.date), "PPP")}</p>
-                            </div>
-                          </div>
-                        </li>
+                        <AccordionItem value={expense.id} key={expense.id} className="border-b">
+                            <AccordionTrigger className="flex w-full items-center justify-between hover:no-underline p-3 bg-secondary/30 rounded-lg">
+                               <div className="flex-1 text-left">
+                                  <p className={cn("font-semibold", expense.settled && "line-through")}>{expense.title}</p>
+                                  <p className="text-sm text-muted-foreground">Paid by {getMemberName(expense.paidBy)}</p>
+                              </div>
+                              <div className="text-right flex-shrink-0 ml-4">
+                                  <p className={cn("font-bold text-lg text-primary truncate", expense.settled && "line-through")}>{formatCurrency(expense.amount, trip.currency)}</p>
+                                  <p className="text-xs text-muted-foreground">{format(new Date(expense.date), "PPP")}</p>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="p-4 bg-secondary/10 rounded-b-lg">
+                              <div className="flex items-center justify-between flex-wrap gap-4">
+                                <div className="flex items-center gap-1">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewingExpense(expense)}><Eye className="h-4 w-4 text-muted-foreground" /></Button>
+                                    {expense.receiptImageUrl && (<Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setViewingReceipt(expense.receiptImageUrl!)}><FileScan className="h-4 w-4 text-muted-foreground" /></Button>)}
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => openEditExpenseDialog(expense)}><Pencil className="h-4 w-4" /></Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive/70 hover:text-destructive" onClick={() => setExpenseToDelete(expense)}><Trash2 className="h-4 w-4" /></Button>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        id={`settle-${expense.id}`}
+                                        checked={expense.settled}
+                                        onCheckedChange={(checked) => handleToggleSettle(expense.id, checked)}
+                                    />
+                                    <Label htmlFor={`settle-${expense.id}`} className="text-sm font-medium">Settled</Label>
+                                </div>
+                              </div>
+                            </AccordionContent>
+                        </AccordionItem>
                       ))}
-                    </ul>
+                    </Accordion>
                   ) : ( <p className="text-muted-foreground text-center py-8">No expenses added yet.</p> )}
                 </CardContent>
               </Card>
